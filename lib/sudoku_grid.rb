@@ -5,6 +5,17 @@ class SudokuGrid
     @rows = string.split("\n").map{|row| row.scan(/\d/)}.select{|x| !x.empty?}
   end
 
+  def self.from_values(values)
+    self.new(values.each_slice(9).to_a.map(&:join).join("\n") ) 
+  end
+
+  def display 
+    rows.each_slice(3).map do | group |
+      group.map do | row |
+        row.each_slice(3).map{|x| x.join(' ')}.join(' |')
+      end.join("\n")
+    end.join("\n------+------+------\n")
+  end
 
   def columns 
     @columns ||= rows.transpose
@@ -22,20 +33,24 @@ class SudokuGrid
 
   def possibilities(i, j)
     return [rows[i][j]] if rows[i][j] != '0'
-    return (all_values - column(i,j).select{|x| x != '0'} - row(i,j).select{|x| x != '0'} - box(i,j).select{|x| x != '0'})
+    return (all_values - column_values(i,j) - row_values(i,j) - box_values(i,j))
+  end
+
+  def grid
+    rows.map(&:join).join
   end
 
   private 
   
-  def row(i,j)
-    rows[i]
+  def row_values(i,j)
+    rows[i].select{|x| x != '0'}
   end
 
-  def column(i,j)
-    columns[j]
+  def column_values(i,j)
+    columns[j].select{|x| x != '0'}
   end
 
-  def box(i, j)
-    boxes[(i / 3) * 3 + j / 3 ]
+  def box_values(i, j)
+    boxes[(i / 3) * 3 + j / 3 ].select{|x| x != '0'}
   end
 end
