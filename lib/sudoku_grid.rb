@@ -2,14 +2,14 @@ class SudokuGrid
   attr_reader :rows
 
   def initialize(string)
-    @rows = string.split("\n").map{|row| row.scan(/\d/)}.select{|x| !x.empty?}
+    @rows = string.split("\n").map{|row| row.scan(/\d+/)}.select{|x| !x.empty?}
   end
 
   def self.from_values(values)
-    self.new(values.each_slice(9).to_a.map(&:join).join("\n") ) 
+    self.new(values.each_slice(9).to_a.map{|x| x.join(' ')}.join("\n") ) 
   end
 
-  def display 
+  def display
     rows.each_slice(3).map do | group |
       group.map do | row |
         row.each_slice(3).map{|x| x.join(' ')}.join(' |')

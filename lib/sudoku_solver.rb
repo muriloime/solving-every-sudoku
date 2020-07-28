@@ -40,11 +40,10 @@ class SudokuSolver
 
   def display(values)
     # binding.pry
-    @sudoku = SudokuGrid.from_values(values.values.flatten).display
+    @sudoku = SudokuGrid.from_values(values.values.map{|x| x.join }).display
   end
 
   def search(values)
-    puts values.values.flatten.count if values
     "Using depth-first search and propagation, try all possible values."
     return false if !values # Failed earlier
     
@@ -52,7 +51,7 @@ class SudokuSolver
       
     ## Chose the unfilled square s with the fewest possibilities
     n,s = SQUARES.map{|s| [values[s].count, s] if values[s].count > 1}.compact.min
-    puts [n, s].join(',')
+    
     return values if values[s].find{|d| search(assign(values.dup, s, d))}
   end
 
