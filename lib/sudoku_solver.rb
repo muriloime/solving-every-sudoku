@@ -2,8 +2,8 @@ require 'sudoku_grid'
 require 'pry'
 class SudokuSolver
   
-  DIGITS   = '123456789'.chars
   ROWS     = 'ABCDEFGHI'.chars
+  DIGITS   = '123456789'.chars
   COLS     = DIGITS
   SQUARES  = ROWS.product(DIGITS).map(&:join)
 
@@ -48,9 +48,7 @@ class SudokuSolver
     "Using depth-first search and propagation, try all possible values."
     return false if !values # Failed earlier
     
-    if SQUARES.all?{|s| values[s].count == 1} ## Solved!
-      return values 
-    end
+    return values if SQUARES.all?{|s| values[s].count == 1} ## Solved!
       
     ## Chose the unfilled square s with the fewest possibilities
     _n, s = SQUARES.map{|s| [values[s].count, s] if values[s].count > 1}.compact.min
@@ -62,7 +60,6 @@ class SudokuSolver
     return false
   end
 
-    
   def assign(values, s, d)
     """Eliminate all the other values (except d) from values[s] and propagate.
     Return values, except return False if a contradiction is detected."""
@@ -83,22 +80,19 @@ class SudokuSolver
     SQUARES.zip(chars).to_h
   end
 
-  def eliminate(values, s, d)
-    """Eliminate d from values[s]; propagate when values or places < 2.
-    Return values, except return False if a contradiction is detected."""
-    
-    return values if !values[s].include?(d) ## Already eliminated
-    
-    values[s] = values[s].reject{|x| x == d }
-    
+  def eliminate_peers(values, s, d)
     case values[s].count
     when 0
-      return false
+      false
     when 1
       d2 = values[s][0]
-      return false if !PEERS[s].all?{|s2| eliminate(values, s2, d2)}
+      PEERS[s].all?{|s2| eliminate(values, s2, d2)}
+    else
+      true
     end
-    
+  end
+
+  def eliminate_units(values, s, d)
     UNITS[s].each do |units|
       dplaces = units.select{|u| values[u].include?(d)}
       case dplaces.count
@@ -110,5 +104,16 @@ class SudokuSolver
         return false if !assign(values, dplaces[0], d)
       end
     end
+  end
+
+  def eliminate(values, s, d)
+    """Eliminate d from values[s]; propagate when values or places < 2.
+    Return values, except return False if a contradiction is detected."""
+    
+    return values if !values[s].include?(d) ## Already eliminated
+    
+    values[s] = values[s].reject{|x| x == d }
+    
+    eliminate_peers(values, s, d) && eliminate_units(values, s, d)
   end
 end
