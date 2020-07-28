@@ -27,4 +27,14 @@ describe SudokuGrid do
     expect(boxes.count).to eq(9)
     expect(boxes[0]).to eq(["4", "0", "0", "0", "3", "0", "0", "0", "0"])
   end
+
+  it 'returns single possibility if cell is solved' do 
+    file = File.read("spec/fixtures/hard.sudoku")
+
+    sudoku = described_class.new(file)
+   
+    expect(sudoku.possibilities(0, 0) ).to eq(['4'])
+    expect(sudoku.possibilities(0, 1) ).to eq(['1', '6', '7', '9'])
+    expect(sudoku.possibilities(8, 8) ).to eq(['2', '3', '6', '8', '9'])
+  end
 end
