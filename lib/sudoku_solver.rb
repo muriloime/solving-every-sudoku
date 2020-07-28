@@ -28,8 +28,9 @@ class SudokuSolver
 
   def parse_grid
     values = SQUARES.zip(grid_values).map{|s, v| [s, DIGITS] }.to_h
-    grid_values.each do |s, d|
-      return false if DIGITS.include?(d) && !assign(values, s, d)
+    grid_values.select{|s, d| DIGITS.include?(d) }.each do |s, d|
+      return false if !assign(values, s, d)
+
     end
     values
   end
@@ -47,12 +48,18 @@ class SudokuSolver
     "Using depth-first search and propagation, try all possible values."
     return false if !values # Failed earlier
     
-    return values if SQUARES.all?{|s| values[s].count == 1} ## Solved!
+    if SQUARES.all?{|s| values[s].count == 1} ## Solved!
+      return values 
+    end
       
     ## Chose the unfilled square s with the fewest possibilities
-    n,s = SQUARES.map{|s| [values[s].count, s] if values[s].count > 1}.compact.min
+    _n, s = SQUARES.map{|s| [values[s].count, s] if values[s].count > 1}.compact.min
     
-    return values if values[s].find{|d| search(assign(values.dup, s, d))}
+    values[s].each do |d| 
+      v = search(assign(values.dup, s, d))
+      return v if v
+    end
+    return false
   end
 
     
@@ -77,7 +84,7 @@ class SudokuSolver
   end
 
   def eliminate(values, s, d)
-    """Eliminate d from values[s]; propagate when values or places <= 2.
+    """Eliminate d from values[s]; propagate when values or places < 2.
     Return values, except return False if a contradiction is detected."""
     
     return values if !values[s].include?(d) ## Already eliminated
@@ -99,6 +106,7 @@ class SudokuSolver
         return false ## Contradiction: no place for this value
       when 1
         # d can only be in one place in unit; assign it there
+        next if dplaces[0] == s
         return false if !assign(values, dplaces[0], d)
       end
     end
