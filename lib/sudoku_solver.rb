@@ -1,4 +1,5 @@
 require 'sudoku_grid'
+require 'grid'
 require 'pry'
 class SudokuSolver
   
@@ -27,9 +28,11 @@ class SudokuSolver
   end
 
   def parse_grid
+    
     values = SQUARES.zip(grid_values).map{|s, v| [s, DIGITS] }.to_h
+    g = Grid.new(values)
     grid_values.select{|s, d| DIGITS.include?(d) }.each do |s, d|
-      return false if !assign(values, s, d)
+      return false if !g.assign( s, d)
 
     end
     values
@@ -40,38 +43,23 @@ class SudokuSolver
   end
 
   def display(values)
-    # binding.pry
     @sudoku = SudokuGrid.from_values(values.values.map{|x| x.join }).display
   end
 
   def search(values)
-    "Using depth-first search and propagation, try all possible values."
-    return false if !values # Failed earlier
+    g = Grid.new(values)
+    return false if !values
     
-    return values if SQUARES.all?{|s| values[s].count == 1} ## Solved!
+    return values if g.solved? ## Solved!
       
-    ## Chose the unfilled square s with the fewest possibilities
-    _n, s = SQUARES.map{|s| [values[s].count, s] if values[s].count > 1}.compact.min
+    s = g.most_constrained
     
     values[s].each do |d| 
-      v = search(assign(values.dup, s, d))
+      v = search(g.dup.assign(s, d))
       return v if v
     end
-    return false
+    false
   end
-
-  def assign(values, s, d)
-    """Eliminate all the other values (except d) from values[s] and propagate.
-    Return values, except return False if a contradiction is detected."""
-    
-    other_values = values[s].reject{|v| v == d}
-
-    if other_values.all?{|d2| eliminate(values, s, d2)}
-      values
-    else
-      false
-    end 
-  end 
 
   def grid_values
     "Convert grid into a dict of {square: char} with '0' for empties."
@@ -80,40 +68,4 @@ class SudokuSolver
     SQUARES.zip(chars).to_h
   end
 
-  def eliminate_peers(values, s, d)
-    case values[s].count
-    when 0
-      false
-    when 1
-      d2 = values[s][0]
-      PEERS[s].all?{|s2| eliminate(values, s2, d2)}
-    else
-      true
-    end
-  end
-
-  def eliminate_units(values, s, d)
-    UNITS[s].each do |units|
-      dplaces = units.select{|u| values[u].include?(d)}
-      case dplaces.count
-      when 0
-        return false ## Contradiction: no place for this value
-      when 1
-        # d can only be in one place in unit; assign it there
-        next if dplaces[0] == s
-        return false if !assign(values, dplaces[0], d)
-      end
-    end
-  end
-
-  def eliminate(values, s, d)
-    """Eliminate d from values[s]; propagate when values or places < 2.
-    Return values, except return False if a contradiction is detected."""
-    
-    return values if !values[s].include?(d) ## Already eliminated
-    
-    values[s] = values[s].reject{|x| x == d }
-    
-    eliminate_peers(values, s, d) && eliminate_units(values, s, d)
-  end
 end
